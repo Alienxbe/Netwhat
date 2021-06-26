@@ -5,3 +5,5 @@
 - Wildcard Mask
 - Show CIDR next to subnet mask
 - Ip type
+
+- New executable to get CIDR from subnet mask
