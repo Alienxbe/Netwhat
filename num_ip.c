@@ -15,86 +15,96 @@
 
 typedef unsigned char	*t_ip;
 
-static char	*ft_strjoin_free(char *s1, char *s2, int n)
+static void	ft_print_ip(char *str, t_ip ip)
 {
-	size_t	size;
-	char	*ptr;
+	int	i;
 
-	if (!s1 || !s2)
-		return (NULL);
-	size = ft_strlen(s1) + ft_strlen(s2) + 1;
-	ptr = (char *)ft_calloc(sizeof(*ptr), size);
-	if (!ptr)
-		return (NULL);
-	ft_memcpy(ptr, s1, ft_strlen(s1));
-	ft_memcpy(ptr + ft_strlen(s1), s2, ft_strlen(s2));
-	if (n >= 1)
-		free(s1);
-	if (n >= 2)
-		free(s2);
-	return (ptr);
-}
-
-static char	*build_ip(t_ip ip)
-{
-	char	*str;
-	int		i;
-
-	str = ft_strdup("");
+	ft_putstr_fd(str, 1);
 	i = -1;
 	while (++i < 4)
 	{
-		str = ft_strjoin_free(str, ft_itoa(ip[i]), 2);
+		ft_putnbr_fd(ip[i], 1);
 		if (i != 3)
-			str = ft_strjoin_free(str, ".", 1);
+			ft_putchar_fd('.', 1);
 	}
-	return (str);
+	ft_putchar_fd('\n', 1);
 }
 
-/*char		*get_network_addr(char **ip, int cidr)
+/*static void	ft_print_byte(unsigned char n)
 {
-	char	*str;
-	int		byte;
-	int		i;
+	int	i;
 
 	i = -1;
-	str = ft_strdup("");
-	while (ip[++i])
-	{
-		byte = ft_atoi(ip[i]);
-		if (cidr / 8 == i)
-		{
-			byte >>= 8 - (cidr - i * 8);
-			byte <<= 8 - (cidr - i * 8);
-		}
-		if (cidr / 8 < i)
-			str = ft_strjoin_free(str, "0", 1);
-		else
-			str = ft_strjoin_free(str, ft_itoa(byte), 2);
-		if (i < 3)
-			str = ft_strjoin_free(str, ".", 1);
-	}
-	if (i != 4)
-	{
-		free(str);
-		str = ft_strdup("Bad IP address");
-	}
-	return (str);
+	while (++i < 8)
+		ft_putchar_fd(((n >> (7 - i)) & 1) + 48, 1);
+	ft_putchar_fd('\n', 1);
 }*/
 
-t_ip	get_broadcast_addr(t_ip ip, int cidr)
+static t_ip	atoip(const char *str)
 {
-	t_ip new_ip;
+	char	**tab;
+	t_ip	ip;
+	int		i;
 
-	new_ip = ft_calloc
+	if (!(tab = ft_split(str, '.')))
+		return (NULL);
+	ip = malloc(sizeof(t_ip) * 4);
+	i = -1;
+	while (tab[++i])
+	{
+		if (ip)
+			ip[i] = (unsigned char)ft_atoi(tab[i]);
+		free(tab[i]);
+	}
+	free(tab);
 	return (ip);
 }
 
-int main(int argc, char const *argv[]) {
-	char	**tab;
+static t_ip	get_network_addr(t_ip ip, int cidr)
+{
+	t_ip	new_ip;
 	int		i;
 
+	if (!(new_ip = (t_ip)malloc(sizeof(t_ip) * 4)))
+		return (NULL);
+	i = -1;
+	while (++i < 4)
+	{
+		if (i < cidr / 8)
+			new_ip[i] = ip[i];
+		else if (i > cidr / 8)
+			new_ip[i] = 0;
+		else
+			new_ip[i] = ip[i] & (~((1 << (8 - (cidr - i * 8))) - 1));
+	}
+	return (new_ip);
+}
+
+static t_ip	get_broadcast_addr(t_ip ip, int cidr)
+{
+	t_ip	new_ip;
+	int		i;
+
+	if (!(new_ip = (t_ip)malloc(sizeof(t_ip) * 4)))
+		return (NULL);
+	i = -1;
+	while (++i < 4)
+	{
+		if (i < cidr / 8)
+			new_ip[i] = ip[i];
+		else if (i > cidr / 8)
+			new_ip[i] = 255;
+		else
+			new_ip[i] = ip[i] | ((1 << (8 - (cidr - i * 8))) - 1);
+	}
+	return (new_ip);
+}
+
+int main(int argc, char const *argv[]) {
+	int		cidr;
 	t_ip	ip;
+	t_ip	network_addr;
+	t_ip	broadcast_addr;
 
 	// Catching errors
 	if (argc != 3)
@@ -104,17 +114,20 @@ int main(int argc, char const *argv[]) {
 	}
 
 	// String into t_ip
-	tab = ft_split(argv[1], '.');
-	ip = malloc(sizeof(t_ip) * 4);
-	i = -1;
-	while (tab[++i])
-	{
-		ip[i] = (unsigned char)ft_atoi(tab[i]);
-		free(tab[i]);
-	}
-	free(tab);
+	cidr = ft_atoi(argv[2]);
+	ip = atoip(argv[1]);
+	network_addr = get_network_addr(ip, cidr);
+	broadcast_addr = get_broadcast_addr(ip, cidr);
 
-	printf("%s\n", build_ip(get_broadcast_addr(ip, 15)));
-	printf("%s\n", build_ip(ip));
+
+	// Print section
+	ft_print_ip("IP            : ", ip);
+	ft_print_ip("Network  IP   : ", network_addr);
+	ft_print_ip("Broadcast IP  : ", broadcast_addr);
+
+	// Free section
+	free(ip);
+	free(network_addr);
+	free(broadcast_addr);
 	return (0);
 }
