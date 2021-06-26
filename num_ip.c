@@ -6,7 +6,7 @@
 /*   By: mykman <mykman@student.s19.be>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/22 16:33:48 by mykman            #+#    #+#             */
-/*   Updated: 2021/06/22 19:17:12 by mykman           ###   ########.fr       */
+/*   Updated: 2021/06/26 21:12:48 by mykman           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 
 typedef unsigned char	*t_ip;
 
-static void	ft_print_ip(char *str, t_ip ip)
+static void	ft_putip(char *str, t_ip ip)
 {
 	int	i;
 
@@ -100,11 +100,32 @@ static t_ip	get_broadcast_addr(t_ip ip, int cidr)
 	return (new_ip);
 }
 
+static t_ip	get_subnet_mask(int cidr)
+{
+	int		i;
+	t_ip	ip;
+
+	if (!(ip = (t_ip)malloc(sizeof(t_ip) * 4)))
+		return (NULL);
+	i = -1;
+	while (++i < 4)
+	{
+		if (i < cidr / 8)
+			ip[i] = 255;
+		else if (i > cidr / 8)
+			ip[i] = 0;
+		else
+			ip[i] = ~((1 << (8 - (cidr - i * 8))) - 1);
+	}
+	return (ip);
+}
+
 int main(int argc, char const *argv[]) {
 	int		cidr;
 	t_ip	ip;
 	t_ip	network_addr;
 	t_ip	broadcast_addr;
+	t_ip	subnet_mask;
 
 	// Catching errors
 	if (argc != 3)
@@ -118,16 +139,19 @@ int main(int argc, char const *argv[]) {
 	ip = atoip(argv[1]);
 	network_addr = get_network_addr(ip, cidr);
 	broadcast_addr = get_broadcast_addr(ip, cidr);
+	subnet_mask = get_subnet_mask(cidr);
 
 
 	// Print section
-	ft_print_ip("IP            : ", ip);
-	ft_print_ip("Network  IP   : ", network_addr);
-	ft_print_ip("Broadcast IP  : ", broadcast_addr);
+	ft_putip("IP            : ", ip);
+	ft_putip("Network  IP   : ", network_addr);
+	ft_putip("Broadcast IP  : ", broadcast_addr);
+	ft_putip("Subnet mask   : ", subnet_mask);
 
 	// Free section
 	free(ip);
 	free(network_addr);
 	free(broadcast_addr);
+	free(subnet_mask);
 	return (0);
 }

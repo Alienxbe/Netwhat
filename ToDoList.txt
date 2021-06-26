@@ -1,0 +1,7 @@
+- Network class
+- show binary translation
+- Total number of host
+- Usable Host IP Range
+- Wildcard Mask
+- Show CIDR next to subnet mask
+- Ip type
